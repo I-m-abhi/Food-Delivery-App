@@ -4,11 +4,19 @@ import useOnlinestatus from '../utils/useOnlineStatus';
 import UserContext from '../utils/UserContext';
 import Shimmer from './Shimmer';
 import Rescard, { withPromatedLabel } from './Rescard';
+import { useDispatch, useSelector } from 'react-redux';
+import { setOnYourMind, setRestaurantList, setTopRestaurantList } from '../utils/restaurantSlice';
+import OnYourMind from './OnYourMind';
+import TopRestaurant from './TopRestaurant';
 
 const Body = () => {
-  const [resList, setResList] = useState([]);
+  // const [resList, setResList] = useState([]);
   const [filterList, setFilterList] = useState([]);
   const [searchText, setsearchText] = useState('');
+
+  const dispatch = useDispatch();
+  const restaurantList = useSelector((store) => store.restaurant.restaurantList);
+  // console.log(rse)
 
   const onlineStatus = useOnlinestatus();
 
@@ -22,11 +30,16 @@ const Body = () => {
 
   const fetchData = async () => {
     const url = 'https://www.swiggy.com/dapi/restaurants/list/v5?lat=12.9715987&lng=77.5945627&is-seo-homepage-enabled=true&page_type=DESKTOP_WEB_LISTING';
+    // const url = 'https://www.swiggy.com/mapi/restaurants/list/v5?offset=0&is-seo-homepage-enabled=true&lat=28.5763126&lng=77.4788014&carousel=true&third_party_vendor=1';
     const data = await fetch(url);
     const json = await data.json();
-    setResList(
-      json?.data?.cards[4]?.card?.card?.gridElements?.infoWithStyle?.restaurants
-    );
+    // console.log()
+    dispatch(setOnYourMind(json?.data?.cards[0]?.card?.card?.imageGridCards?.info));
+    dispatch(setTopRestaurantList(json?.data?.cards[1]?.card?.card?.gridElements?.infoWithStyle?.restaurants));
+    dispatch(setRestaurantList(json?.data?.cards[4]?.card?.card?.gridElements?.infoWithStyle?.restaurants));
+    // setResList(
+    //   json?.data?.cards[4]?.card?.card?.gridElements?.infoWithStyle?.restaurants
+    // );
     setFilterList(
       json?.data?.cards[4]?.card?.card?.gridElements?.infoWithStyle?.restaurants
     );
@@ -37,7 +50,7 @@ const Body = () => {
   }
 
   const handleSearch = () => {
-    const filteredSerachData = resList.filter((res) => res.info.name.toLowerCase().includes(searchText.toLowerCase()));
+    const filteredSerachData = restaurantList.filter((res) => res.info.name.toLowerCase().includes(searchText.toLowerCase()));
     setFilterList(filteredSerachData);
   }
 
@@ -50,10 +63,13 @@ const Body = () => {
     return <h1>Looks like you are Offline</h1>
   }
 
-  return (resList?.length === 0) ? (
+  return (restaurantList?.length === 0) ? (
     <Shimmer />
   ) : (
     <div className="body">
+      <OnYourMind />
+
+      <TopRestaurant />
       <div className="filter flex px-[200px]">
         <div className='search p-4'>
           <input
@@ -83,18 +99,27 @@ const Body = () => {
             type="text" />
         </div>
       </div>
-      <div className="grid grid-cols-4 place-items-center container mx-auto px-[200px]">
-        {filterList.map((item) => {
-          return (
-            <Link key={item.info.id} to={'/restaurants/' + item.info.id}>
-              {item.info.promoted ? (
-                <PromatedLabel resList={item} />
-              ) : (
-                <Rescard resList={item} />
-              )}
-            </Link>
-          )
-        })}
+      <div className='container'>
+        <div className="common-head">
+          <h2>Restaurants with online food delivery in Noida</h2>
+          <div>
+            <span>⬅️</span>
+            <span>➡️</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 place-items-center container mx-auto px-[200px]">
+          {filterList.map((item) => {
+            return (
+              <Link key={item.info.id} to={'/restaurants/' + item.info.id}>
+                {item.info.promoted ? (
+                  <PromatedLabel resList={item} />
+                ) : (
+                  <Rescard resList={item} />
+                )}
+              </Link>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
